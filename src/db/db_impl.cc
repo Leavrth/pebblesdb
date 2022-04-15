@@ -227,6 +227,7 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
       backup_waiter_has_it_(false),
       backup_deferred_delete_(),
       bg_error_(),
+      kcache("/mnt/mem/kcache"),
       num_bg_compaction_threads_(1) {
   mutex_.Lock();
   mem_->Ref();
@@ -1274,6 +1275,7 @@ Status DBImpl::DoCompactionWorkGuards(CompactionState* compact,
   std::vector<std::string*> file_level_filters;
   int total_input_files = 0, current_level_input_files = 0, next_level_input_files = 0, total_output_files = 0;
   uint64_t total_input_data_size = 0, current_level_input_data_size = 0, next_level_input_data_size = 0, total_output_data_size = 0;
+  unsigned level = compact->compaction->level();
 
   Log(options_.info_log,  "Compacting %lu@%d + %lu@%d files for guards in a level",
       compact->compaction->num_input_files(0),
@@ -1427,25 +1429,57 @@ Status DBImpl::DoCompactionWorkGuards(CompactionState* compact,
           break;
         }
       }
-      if (compact->builder->NumEntries() == 0) {
-        compact->current_output()->smallest.DecodeFrom(key);
+      // kcache
+      if (level > 0) {
+        if (kcache.replace(ikey.user_key.data(), ikey.user_key.size(), input->filenumber(), compact->current_output()->number) == -1) {
+          drop = true;
+        }
+        /*
+        int filenumber = kcache.get(ikey.user_key.data(), ikey.user_key.size());
+        if (filenumber > 0) {
+          if (filenumber == input->filenumber()) {
+            // The key in kcache need to compacted into next level
+            // Update the kcache too
+            printf("replace\n");
+            kcache.insert(ikey.user_key.data(), ikey.user_key.size(), compact->current_output()->number);            
+            
+          } else {
+            // There is a newer version key
+            drop = true;
+          }
+        }*/
+        //printf("replace: [level=%d] [key=%.*s] [number=%d]\n", level, ikey.user_key.size(), ikey.user_key.data(), compact->current_output()->number);
+        
+        
+      } else {
+        // level == 0
+        
+        kcache.insert(ikey.user_key.data(), ikey.user_key.size(), compact->current_output()->number);
+        printf("insert\n");
+        //printf("insert: [level=%d] [key=%.*s] [number=%d]\n", level, ikey.user_key.size(), ikey.user_key.data(), input->filenumber());
       }
-      compact->current_output()->largest.DecodeFrom(key);
-      compact->builder->Add(key, input->value());
+
+      if (!drop) {
+        if (compact->builder->NumEntries() == 0) {
+          compact->current_output()->smallest.DecodeFrom(key);
+        }
+        compact->current_output()->largest.DecodeFrom(key);
+        compact->builder->Add(key, input->value());
 
 #ifdef FILE_LEVEL_FILTER
-      file_level_filter_builder->AddKey(key);
+        file_level_filter_builder->AddKey(key);
 #endif
 
-      // Close output file if it is big enough
-      if (compact->builder->FileSize() >=
-          compact->compaction->MaxOutputFileSize()) {
-        start_timer(BGC_FINISH_COMPACTION_OUTPUT_FILE);
-        status = FinishCompactionOutputFile(compact, input, file_level_filter_builder, &file_numbers, &file_level_filters);
-        index = 0;
-        record_timer(BGC_FINISH_COMPACTION_OUTPUT_FILE);
-        if (!status.ok()) {
-          break;
+        // Close output file if it is big enough
+        if (compact->builder->FileSize() >=
+            compact->compaction->MaxOutputFileSize()) {
+          start_timer(BGC_FINISH_COMPACTION_OUTPUT_FILE);
+          status = FinishCompactionOutputFile(compact, input, file_level_filter_builder, &file_numbers, &file_level_filters);
+          index = 0;
+          record_timer(BGC_FINISH_COMPACTION_OUTPUT_FILE);
+          if (!status.ok()) {
+            break;
+          }
         }
       }
     }
@@ -1630,7 +1664,7 @@ Status DBImpl::Get(const ReadOptions& options,
       record_timer(GET_TIME_TO_CHECK_MEM_IMM);
 
       start_timer(GET_TIME_TO_CHECK_VERSION);
-      s = current->Get(options, lkey, value, &stats);
+      s = current->Get(options, lkey, value, kcache, &stats);
       total_files_read += current->num_files_read;
       record_timer(GET_TIME_TO_CHECK_VERSION);
 

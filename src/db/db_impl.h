@@ -25,6 +25,7 @@
 #include "port/thread_annotations.h"
 #include "util/timer.h"
 #include "db/version_set.h"
+#include "db/kcache.hpp"
 
 namespace leveldb {
 #ifdef _LIBCPP_VERSION
@@ -273,6 +274,9 @@ class DBImpl : public DB {
 
   // Have we encountered a background error in paranoid mode?
   Status bg_error_;
+
+  // Persistent memory cache
+  kcache::kcache kcache;
 
   // Per level compaction stats.  stats_[level] stores the stats for
   // compactions that produced data for the specified "level".

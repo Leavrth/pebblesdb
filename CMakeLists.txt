@@ -157,6 +157,10 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(pebblesdb Threads::Threads)
 
+# Locate the pmemobj library
+find_library(pmemobj pmemobj "")
+target_link_libraries(pebblesdb pmemobj)
+
 message(STATUS "C++ flags:    " ${CMAKE_CXX_FLAGS})
 
 if (PEBBLESDB_BUILD_TESTS)

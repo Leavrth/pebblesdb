@@ -155,8 +155,8 @@ libpebblesdb_la_SOURCES += util/logging.cc
 libpebblesdb_la_SOURCES += util/options.cc
 libpebblesdb_la_SOURCES += util/status.cc
 libpebblesdb_la_SOURCES += port/port_posix.cc
-libpebblesdb_la_LIBADD = $(SNAPPY_LIBS) -lpthread -lsnappy
-libpebblesdb_la_LDFLAGS = -lpthread -lsnappy $(AM_LDFLAGS) $(LDFLAGS)
+libpebblesdb_la_LIBADD = $(SNAPPY_LIBS) -lpthread -lpmemobj -lsnappy
+libpebblesdb_la_LDFLAGS = -lpthread -lpmemobj -lsnappy $(AM_LDFLAGS) $(LDFLAGS)
 
 TESTUTIL = util/testutil.cc
 TESTHARNESS = util/testharness.cc $(TESTUTIL)
@@ -198,11 +198,11 @@ check_PROGRAMS += issue200_test
 TESTS = $(check_PROGRAMS)
 
 benchmark_SOURCES = benchmark.cc
-benchmark_LDADD = libpebblesdb.la -lpthread -lsnappy -le -lpopt -lygor
+benchmark_LDADD = libpebblesdb.la -lpthread -lpmemobj -lsnappy -le -lpopt -lygor
 benchmark_LDFLAGS = -no-install
 
 db_bench_SOURCES = db/db_bench.cc $(TESTUTIL)
-db_bench_LDADD = libpebblesdb.la -lpthread -lsnappy
+db_bench_LDADD = libpebblesdb.la -lpthread -lpmemobj -lsnappy
 
 db_bench_sqlite3_SOURCES = doc/bench/db_bench_sqlite3.cc $(TESTUTIL)
 db_bench_sqlite3_LDADD = -lsqlite3
@@ -211,73 +211,73 @@ db_bench_tree_db_SOURCES = doc/bench/db_bench_tree_db.cc $(TESTUTIL)
 db_bench_tree_db_LDADD = -lkyotocabinet
 
 leveldbutil_SOURCES = db/leveldb_main.cc
-leveldbutil_LDADD = libpebblesdb.la -lpthread -lsnappy
+leveldbutil_LDADD = libpebblesdb.la -lpthread -lpmemobj -lsnappy
 
 leveldb_dump_all_SOURCES = leveldb-dump-all.cc
-leveldb_dump_all_LDADD = libpebblesdb.la -lpthread
+leveldb_dump_all_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 leveldb_verify_SOURCES = leveldb-verify.cc
-leveldb_verify_LDADD = libpebblesdb.la -lpthread
+leveldb_verify_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 autocompact_test_SOURCES = db/autocompact_test.cc $(TESTHARNESS)
-autocompact_test_LDADD = libpebblesdb.la -lpthread
+autocompact_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 arena_test_SOURCES = util/arena_test.cc $(TESTHARNESS)
-arena_test_LDADD = libpebblesdb.la -lpthread
+arena_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 bloom_test_SOURCES = util/bloom_test.cc $(TESTHARNESS)
-bloom_test_LDADD = libpebblesdb.la -lpthread
+bloom_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 c_test_SOURCES = db/c_test.c $(TESTHARNESS)
-c_test_LDADD = libpebblesdb.la -lpthread
+c_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 cache_test_SOURCES = util/cache_test.cc $(TESTHARNESS)
-cache_test_LDADD = libpebblesdb.la -lpthread
+cache_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 coding_test_SOURCES = util/coding_test.cc $(TESTHARNESS)
-coding_test_LDADD = libpebblesdb.la -lpthread
+coding_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 corruption_test_SOURCES = db/corruption_test.cc $(TESTHARNESS)
-corruption_test_LDADD = libpebblesdb.la -lpthread
+corruption_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 crc32c_test_SOURCES = util/crc32c_test.cc $(TESTHARNESS)
-crc32c_test_LDADD = libpebblesdb.la -lpthread
+crc32c_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 db_test_SOURCES = db/db_test.cc $(TESTHARNESS)
-db_test_LDADD = libpebblesdb.la -lpthread
+db_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 dbformat_test_SOURCES = db/dbformat_test.cc $(TESTHARNESS)
-dbformat_test_LDADD = libpebblesdb.la -lpthread
+dbformat_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 env_test_SOURCES = util/env_test.cc $(TESTHARNESS)
-env_test_LDADD = libpebblesdb.la -lpthread
+env_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 filename_test_SOURCES = db/filename_test.cc $(TESTHARNESS)
-filename_test_LDADD = libpebblesdb.la -lpthread
+filename_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 filter_block_test_SOURCES = table/filter_block_test.cc $(TESTHARNESS)
-filter_block_test_LDADD = libpebblesdb.la -lpthread
+filter_block_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 log_test_SOURCES = db/log_test.cc $(TESTHARNESS)
-log_test_LDADD = libpebblesdb.la -lpthread
+log_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 table_test_SOURCES = table/table_test.cc $(TESTHARNESS)
-table_test_LDADD = libpebblesdb.la -lpthread
+table_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 skiplist_test_SOURCES = db/skiplist_test.cc $(TESTHARNESS)
-skiplist_test_LDADD = libpebblesdb.la -lpthread
+skiplist_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 version_edit_test_SOURCES = db/version_edit_test.cc $(TESTHARNESS)
-version_edit_test_LDADD = libpebblesdb.la -lpthread
+version_edit_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 version_set_test_SOURCES = db/version_set_test.cc $(TESTHARNESS)
-version_set_test_LDADD = libpebblesdb.la -lpthread
+version_set_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 write_batch_test_SOURCES = db/write_batch_test.cc $(TESTHARNESS)
-write_batch_test_LDADD = libpebblesdb.la -lpthread
+write_batch_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 issue178_test_SOURCES = issues/issue178_test.cc $(TESTHARNESS)
-issue178_test_LDADD = libpebblesdb.la -lpthread
+issue178_test_LDADD = libpebblesdb.la -lpthread -lpmemobj
 
 issue200_test_SOURCES = issues/issue200_test.cc $(TESTHARNESS)
-issue200_test_LDADD = libpebblesdb.la -lpthread
+issue200_test_LDADD = libpebblesdb.la -lpthread -lpmemobj

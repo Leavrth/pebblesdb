@@ -13,8 +13,8 @@ namespace leveldb {
 // cache locality.
 class IteratorWrapper {
  public:
-  IteratorWrapper(): iter_(NULL), valid_(false), key_() { }
-  explicit IteratorWrapper(Iterator* it): iter_(NULL), valid_(), key_() {
+  IteratorWrapper(): iter_(NULL), valid_(false), key_(), filenumber_(-1) { }
+  explicit IteratorWrapper(Iterator* it): iter_(NULL), valid_(), key_(), filenumber_(-1) {
     Set(it);
   }
   ~IteratorWrapper() { delete iter_; }
@@ -37,6 +37,7 @@ class IteratorWrapper {
   bool Valid() const        { return valid_; }
   Slice key() const         { assert(Valid()); return key_; }
   Slice value() const       { assert(Valid()); return iter_->value(); }
+  int filenumber() const  { assert(Valid()); return filenumber_; }
   // Methods below require iter() != NULL
   const Status& status() const { assert(iter_); return iter_->status(); }
   void Next()               { assert(iter_); iter_->Next();        Update(); }
@@ -53,12 +54,14 @@ class IteratorWrapper {
     valid_ = iter_->Valid();
     if (valid_) {
       key_ = iter_->key();
+      filenumber_ = iter_->filenumber();
     }
   }
 
   Iterator* iter_;
   bool valid_;
   Slice key_;
+  int filenumber_;
 };
 
 }  // namespace leveldb

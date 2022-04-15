@@ -64,6 +64,10 @@ class Iterator {
   // REQUIRES: !AtEnd() && !AtStart()
   virtual Slice value() const = 0;
 
+  // Return the newest filenumber of the SSTable the current key-value exists in
+  // REQUIRES: Valid()
+  virtual int filenumber() const { return -2; };
+
   // If an error has occurred, return it.  Else return an ok status.
   virtual const Status& status() const = 0;
 

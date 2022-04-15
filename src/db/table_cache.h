@@ -16,6 +16,7 @@
 #include "port/port.h"
 #include "util/timer.h"
 #include "db/version_set.h"
+#include "pebblesdb/iterator.h"
 //#include <unordered_map>
 
 namespace leveldb {
@@ -103,6 +104,55 @@ class TableCache {
 //  std::unordered_map<uint64_t, Cache::Handle*> cache_handle_map;
 
   Status FindTable(uint64_t file_number, uint64_t file_size, Cache::Handle**, Timer* timer);
+};
+
+
+// A internal wrapper class with an interface similar to Iterator that
+// save the filenumber it's from.
+class IteratorFilenumber: public Iterator {
+ public:
+  explicit IteratorFilenumber(Iterator* it, int filenumber) : filenumber_(filenumber), iter_(NULL), valid_(false) {
+    Set(it);
+  }
+  ~IteratorFilenumber() { if (iter_ != NULL) delete iter_; }
+  Iterator* iter() const { return iter_; }
+
+  // Takes ownership of "iter" and will delete it when destroyed, or
+  // when Set() is invoked again.
+  void Set(Iterator* it) {
+    if (iter_ != NULL)
+      delete iter_;
+    iter_ = it;
+    if (iter_ != NULL) {
+      Update();
+    }
+  }
+
+
+  // Iterator interface methods
+  virtual bool Valid() const        { return valid_; }
+  virtual Slice key() const         { assert(Valid()); return iter_->key(); }
+  virtual Slice value() const       { assert(Valid()); return iter_->value(); }
+  virtual int filenumber() const  { assert(Valid()); return filenumber_; }
+  // Methods below require iter() != NULL
+  virtual const Status& status() const { assert(iter_); return iter_->status(); }
+  virtual void Next()               { assert(iter_); iter_->Next();        Update(); }
+  virtual void Prev()               { assert(iter_); iter_->Prev();        Update(); }
+  virtual void Seek(const Slice& k) { assert(iter_); iter_->Seek(k);       Update(); }
+  virtual void SeekToFirst()        { assert(iter_); iter_->SeekToFirst(); Update(); }
+  virtual void SeekToLast()         { assert(iter_); iter_->SeekToLast();  Update(); }
+  void MakeInvalid()		{ valid_ = false; }
+
+ private:
+  IteratorFilenumber();
+  IteratorFilenumber(const IteratorFilenumber&);
+  IteratorFilenumber& operator = (const IteratorFilenumber&);
+
+  void Update() { valid_ = iter_->Valid(); }
+
+  Iterator* iter_;
+  bool valid_;
+  int filenumber_;
 };
 
 }  // namespace leveldb

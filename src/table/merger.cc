@@ -414,6 +414,13 @@ class MergingIterator : public Iterator {
     return current_->value();
   }
 
+  virtual int filenumber() const {
+    assert(Valid());
+   if (current_ == NULL)
+    return 0;
+   return current_->filenumber();
+  }
+
   virtual const Status& status() const {
     // XXX this value can easily be cached
     for (int i = 0; i < n_; i++) {

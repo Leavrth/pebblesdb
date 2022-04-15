@@ -114,16 +114,16 @@ void TableCache::SetFileMetaDataMap(uint64_t file_number, uint64_t file_size, In
 //	printf("Setting file meta data map for file %llu\n", file_number);
 	// Disabling this because accessing map with multiple bg compaction threads might lead to race conditions.
 	// Anyways this map is not being used anywhere.
-	return;
-//	  if (file_metadata_map[file_number] == NULL) {
-////		  printf("DEBUG :: Creating new FileMetaData for file %llu to set file metadata map in table_cache\n", file_number);
-//		  FileMetaData* file_meta = new FileMetaData();
-//		  file_meta->number = file_number;
-//		  file_meta->file_size = file_size;
-//		  file_meta->smallest = smallest;
-//		  file_meta->largest = largest;
-//		  file_metadata_map[file_number] = file_meta;
-//	  }
+//	return;
+if (file_metadata_map[file_number] == NULL) {
+//		  printf("DEBUG :: Creating new FileMetaData for file %llu to set file metadata map in table_cache\n", file_number);
+		  FileMetaData* file_meta = new FileMetaData();
+		  file_meta->number = file_number;
+		  file_meta->file_size = file_size;
+		  file_meta->smallest = smallest;
+		  file_meta->largest = largest;
+		  file_metadata_map[file_number] = file_meta;
+	  }
 }
 
 Iterator* TableCache::NewIterator(const ReadOptions& options,
@@ -146,7 +146,8 @@ Iterator* TableCache::NewIterator(const ReadOptions& options,
   if (tableptr != NULL) {
     *tableptr = table;
   }
-  return result;
+  if (result == NULL) return NULL;
+  return new IteratorFilenumber(result, file_number);
 }
 
 Status TableCache::Get(const ReadOptions& options,

@@ -44,6 +44,10 @@ class TwoLevelIterator: public Iterator {
     assert(Valid());
     return data_iter_.value();
   }
+  virtual int filenumber() const {
+    assert(Valid());
+    return data_iter_.filenumber();
+  }
   virtual const Status& status() const {
     if (!index_iter_.status().ok()) {
       return index_iter_.status();
@@ -219,6 +223,10 @@ class TwoLevelIteratorGuards: public Iterator {
   virtual Slice value() const {
     assert(Valid());
     return data_iter_.value();
+  }
+  virtual int filenumber() const {
+    assert(Valid());
+    return data_iter_.filenumber();
   }
   virtual const Status& status() const {
     if (!index_iter_.status().ok()) {
