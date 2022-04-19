@@ -210,6 +210,7 @@ if (PEBBLESDB_BUILD_TESTS)
     pebblesdb_test("${PROJECT_SOURCE_DIR}/issues/issue178_test.cc")
     pebblesdb_test("${PROJECT_SOURCE_DIR}/issues/issue200_test.cc")
     pebblesdb_test("${PROJECT_SOURCE_DIR}/demo/installation_test.cc")
+    pebblesdb_test("${PROJECT_SOURCE_DIR}/db/kcache_test.cc")
 endif (PEBBLESDB_BUILD_TESTS)
 
 if(PEBBLESDB_INSTALL)

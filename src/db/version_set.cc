@@ -876,50 +876,50 @@ Status Version::Get(const ReadOptions& options,
     std::vector<FileMetaData*> tmp2;
     size_t num_files = files_[level].size();
     size_t num_guards = guards_[level].size();
+#ifdef PMEM_KEY_CACHE
     // If Level == 1, Try to find in kcache
     if (level == 1) {
       int filenumber = kcache.get(user_key.data(), user_key.size());
       if (filenumber > 0) {
         FileMetaData *f = vset_->table_cache_->GetFileMetaDataForFile(filenumber);
         if (f == NULL) printf("file is null! filenumber = %d.\n", filenumber);
-        else {printf("hit the kcache\n");
-        Saver saver;
-        saver.state = kNotFound;
-        saver.ucmp = ucmp;
-        saver.user_key = user_key;
-        saver.value = value;
+        else {
+          Saver saver;
+          saver.state = kNotFound;
+          saver.ucmp = ucmp;
+          saver.user_key = user_key;
+          saver.value = value;
 
-        vstart_timer(GET_TABLE_CACHE_GET, BEGIN, 1);
-        s = vset_->table_cache_->Get(options, f->number, f->file_size,
-          ikey, &saver, SaveValue, vset_->timer);
-        vrecord_timer(GET_TABLE_CACHE_GET, BEGIN, 1);
-        num_files_read++;
+          vstart_timer(GET_TABLE_CACHE_GET, BEGIN, 1);
+          s = vset_->table_cache_->Get(options, f->number, f->file_size,
+            ikey, &saver, SaveValue, vset_->timer);
+          vrecord_timer(GET_TABLE_CACHE_GET, BEGIN, 1);
+          num_files_read++;
 
-        if (!s.ok()) {
-          return s;
+          if (!s.ok()) {
+            return s;
+          }
+
+          switch (saver.state) {
+            case kNotFound:
+              s = Status::IOError("kcache hit but file not found.", user_key);
+              return s;
+            case kFound:
+              return Status::OK();
+            case kDeleted:
+              s = Status::NotFound(Slice());  // Use empty error message for speed
+              return s;
+            case kCorrupt:
+              s = Status::Corruption("corrupted key for ", user_key);
+              return s;
+            default:
+              s = Status::IOError("kcache hit but file not found.", user_key);
+              return s;
+          }
         }
-        printf("file ? saver.state: %d\n", saver.state);
-        switch (saver.state) {
-          case kNotFound:
-            s = Status::IOError("kcache hit but file not found.", user_key);
-            return s;
-          case kFound:
-            return Status::OK();
-          case kDeleted:
-            s = Status::NotFound(Slice());  // Use empty error message for speed
-            return s;
-          case kCorrupt:
-            s = Status::Corruption("corrupted key for ", user_key);
-            return s;
-          default:
-            s = Status::IOError("kcache hit but file not found.", user_key);
-            return s;
-        }
-        }
-      } else {
-        printf("not hit the kcache: [user_key=%.*s] [filenumber=%d]\n", user_key.size(), user_key.data(), filenumber);
       }
     }
+#endif
     if (num_files == 0) {
     	continue;
     }

@@ -227,7 +227,9 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
       backup_waiter_has_it_(false),
       backup_deferred_delete_(),
       bg_error_(),
+#ifdef PMEM_KEY_CACHE
       kcache("/mnt/mem/kcache"),
+#endif
       num_bg_compaction_threads_(1) {
   mutex_.Lock();
   mem_->Ref();
@@ -1429,37 +1431,25 @@ Status DBImpl::DoCompactionWorkGuards(CompactionState* compact,
           break;
         }
       }
+#ifdef PMEM_KEY_CACHE
       // kcache
       if (level > 0) {
         if (kcache.replace(ikey.user_key.data(), ikey.user_key.size(), input->filenumber(), compact->current_output()->number) == -1) {
           drop = true;
+          //printf("drop the key: %.*s\n", ikey.user_key.size(), ikey.user_key.data());
+        } else {
+          //printf("reserve the key: %.*s\n", ikey.user_key.size(), ikey.user_key.data());
         }
-        /*
-        int filenumber = kcache.get(ikey.user_key.data(), ikey.user_key.size());
-        if (filenumber > 0) {
-          if (filenumber == input->filenumber()) {
-            // The key in kcache need to compacted into next level
-            // Update the kcache too
-            printf("replace\n");
-            kcache.insert(ikey.user_key.data(), ikey.user_key.size(), compact->current_output()->number);            
-            
-          } else {
-            // There is a newer version key
-            drop = true;
-          }
-        }*/
-        //printf("replace: [level=%d] [key=%.*s] [number=%d]\n", level, ikey.user_key.size(), ikey.user_key.data(), compact->current_output()->number);
-        
-        
       } else {
         // level == 0
         
         kcache.insert(ikey.user_key.data(), ikey.user_key.size(), compact->current_output()->number);
-        printf("insert\n");
+        //printf("insert\n");
         //printf("insert: [level=%d] [key=%.*s] [number=%d]\n", level, ikey.user_key.size(), ikey.user_key.data(), input->filenumber());
       }
 
       if (!drop) {
+#endif
         if (compact->builder->NumEntries() == 0) {
           compact->current_output()->smallest.DecodeFrom(key);
         }
@@ -1481,7 +1471,9 @@ Status DBImpl::DoCompactionWorkGuards(CompactionState* compact,
             break;
           }
         }
+#ifdef PMEM_KEY_CACHE
       }
+#endif
     }
 
     input->Next();

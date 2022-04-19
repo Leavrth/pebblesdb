@@ -17,7 +17,14 @@ using namespace pmem::obj;
 
 namespace kcache { 
 
+/** The total number of hash buckets. The range of the hash is from 0 to NBUCKETS */
+// use 100007
 #define NBUCKETS 1007
+
+/** The maximum number of the hash entries in each bucket. */
+#define NENTRY 10
+
+
 #define LAYOUT_NAME "kcache"
 #define POOL_SIZE ((size_t)128 * 1024 * 1024)
 
@@ -38,6 +45,7 @@ struct root {
 
 class kcache {
 public:
+    kcache() = default;
     explicit kcache(const char *path) {
         if (access(path, F_OK) == 0) {
             try {
@@ -67,7 +75,10 @@ public:
 
     int insert(const char *key, int klen, int filenumber) {
         persistent_ptr<root> r = pop.root();
-        persistent_ptr<hash_entry> entry;
+        persistent_ptr<hash_entry> entry = nullptr;
+        persistent_ptr<hash_entry> older_entry = nullptr;
+        int older_filenumber = 2147483647;
+        int entry_cnt = 0;
         uint h = bkdr_hash(key, klen);
 
         for (entry = r->buckets[h];
@@ -79,8 +90,25 @@ public:
                     entry->val = filenumber;
                 });
 
-                return 1;
+                return 0;
             }
+            if (older_filenumber > entry->val) {
+                // There is an older entry, update older_entry;
+                older_entry = entry;
+                older_filenumber = entry->val;
+            }
+            entry_cnt = entry_cnt + 1;
+        }
+
+        if (entry_cnt >= NENTRY) {
+            // maximum number of entries limit exceeded
+            // replace the oldest entry
+            transaction::run(pop, [&] {
+                older_entry->val = filenumber;
+                delete_persistent<string>(older_entry->key);
+                older_entry->key = make_persistent<string>(key, klen);
+            });
+            return 1;
         }
 
         transaction::run(pop, [&] {
@@ -91,10 +119,10 @@ public:
             r->buckets[h] = entry;
         });
 
-        return 0;
+        return 2;
     }
 
-    /** try replace the key. Return 0 if the key is not found. Otherwise, return -1 if assert_filenumber is different from
+    /** try to replace the key. Return 0 if the key is not found. Otherwise, return -1 if assert_filenumber is different from
      * the filenumber of the cached key. */
     int replace(const char *key, int klen, int assert_filenumber, int update_filenumber) {
         persistent_ptr<root> r= pop.root();

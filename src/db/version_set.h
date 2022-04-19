@@ -33,7 +33,7 @@
 //#define SEEK_PARALLEL
 #define FILE_LEVEL_FILTER
 //#define DISABLE_SEEK_BASED_COMPACTION
-
+#define PMEM_KEY_CACHE
 
 #ifdef TIMER_LOG_SEEK
 	#define hstart_timer(s) timer->StartTimer(s)
